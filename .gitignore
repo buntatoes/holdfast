@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Native / preload
+*.so
+*.o
+*.a
+
+# Node / Next
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Holdfast audit
+audit.jsonl
+*.audit.jsonl
+.local/share/holdfast/
+
+# Demo outputs
+demo/out.txt
+demo/out-ok.txt
+
+# OS / editors
+.DS_Store
+*.swp
+*~
