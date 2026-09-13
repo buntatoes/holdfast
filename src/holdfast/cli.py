@@ -131,8 +131,8 @@ def wrap_exec(argv: list[str]) -> int:
         prog = resolved
     try:
         os.execvpe(prog, argv, env)
-    except OSError as extra:
-        print(f"holdfast wrap: failed to exec {prog}: {extra}", file=sys.stderr)
+    except OSError as exc:
+        print(f"holdfast wrap: failed to exec {prog}: {exc}", file=sys.stderr)
         return 127
     return 0
 

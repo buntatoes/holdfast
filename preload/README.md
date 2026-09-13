@@ -80,14 +80,14 @@ s.listen(32)
 def handle(c):
     with c:
         buf = b""
-        while b"\\n" not in buf:
+        while b"\n" not in buf:
             chunk = c.recv(4096)
             if not chunk:
                 return
             buf += chunk
-        line = buf.split(b"\\n", 1)[0]
+        line = buf.split(b"\n", 1)[0]
         req = json.loads(line.decode())
-        c.sendall((json.dumps({"id": req["id"], "decision": "allow"}) + "\\n").encode())
+        c.sendall((json.dumps({"id": req["id"], "decision": "allow"}) + "\n").encode())
 
 while True:
     c, _ = s.accept()
