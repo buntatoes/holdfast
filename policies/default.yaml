@@ -1,0 +1,177 @@
+# Holdfast shipped policy. First match wins.
+# Unmatched requests are deny (fail-closed).
+version: 1
+rules:
+  # File reads under the wrapped process cwd.
+  - id: allow-cwd-read
+    match:
+      kind: file
+      flags: r
+      under_cwd: true
+    action: allow
+
+  # Operator desk / daemon HTTP (loopback).
+  - id: allow-holdfast-http-loopback
+    match:
+      kind: net
+      op: connect
+      host: "127.0.0.1"
+      port: 47821
+    action: allow
+
+  - id: allow-holdfast-http-localhost
+    match:
+      kind: net
+      op: connect
+      host: localhost
+      port: 47821
+    action: allow
+
+  - id: allow-holdfast-http-ipv6
+    match:
+      kind: net
+      op: connect
+      host: "::1"
+      port: 47821
+    action: allow
+
+  # Holdfast's own Unix sockets (preload IPC).
+  - id: allow-holdfast-unix
+    match:
+      kind: net
+      path: "**/holdfast.sock"
+    action: allow
+
+  # Secrets and privileged trees.
+  - id: deny-etc-shadow
+    match:
+      kind: file
+      path_prefix: /etc/shadow
+    action: deny
+
+  - id: deny-root
+    match:
+      kind: file
+      path_prefix: /root
+    action: deny
+
+  - id: deny-ssh-home
+    match:
+      kind: file
+      path_prefix: "~/.ssh"
+    action: deny
+
+  - id: deny-ssh-any
+    match:
+      kind: file
+      path: "**/.ssh/**"
+    action: deny
+
+  - id: deny-ssh-id-rsa
+    match:
+      kind: file
+      path: "**/id_rsa*"
+    action: deny
+
+  - id: deny-ssh-id-ed25519
+    match:
+      kind: file
+      path: "**/id_ed25519*"
+    action: deny
+
+  - id: deny-ssh-id-ecdsa
+    match:
+      kind: file
+      path: "**/id_ecdsa*"
+    action: deny
+
+  - id: deny-ssh-id-dsa
+    match:
+      kind: file
+      path: "**/id_dsa*"
+    action: deny
+
+  - id: deny-aws-home
+    match:
+      kind: file
+      path_prefix: "~/.aws"
+    action: deny
+
+  - id: deny-aws-any
+    match:
+      kind: file
+      path: "**/.aws/**"
+    action: deny
+
+  - id: deny-gnupg-home
+    match:
+      kind: file
+      path_prefix: "~/.gnupg"
+    action: deny
+
+  - id: deny-gnupg-any
+    match:
+      kind: file
+      path: "**/.gnupg/**"
+    action: deny
+
+  # Interpreter and OS reads (stdlib, ld.so, /proc, /etc/passwd, …).
+  # Secrets above still deny first. These allows are not shown as pending
+  # and are omitted from the default audit stream so the desk stays usable.
+  - id: allow-file-read
+    match:
+      kind: file
+      flags: r
+    action: allow
+
+  # Everything else that mutates files, execs, or connects: ask a human.
+  - id: ask-file-write
+    match:
+      kind: file
+      flags: w
+    action: ask
+
+  - id: ask-file-rw
+    match:
+      kind: file
+      flags: rw
+    action: ask
+
+  - id: ask-file-creat
+    match:
+      kind: file
+      op: creat
+    action: ask
+
+  - id: ask-file-unlink
+    match:
+      kind: file
+      op: unlink
+    action: ask
+
+  - id: ask-file-rename
+    match:
+      kind: file
+      op: rename
+    action: ask
+
+  - id: ask-exec
+    match:
+      op: exec
+    action: ask
+
+  - id: ask-shell
+    match:
+      kind: shell
+    action: ask
+
+  - id: ask-connect
+    match:
+      kind: net
+      op: connect
+    action: ask
+
+  - id: ask-net
+    match:
+      kind: net
+    action: ask

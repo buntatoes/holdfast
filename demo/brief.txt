@@ -1,0 +1,5 @@
+Holdfast well-behaved demo input.
+
+A coding agent may read this file and write a short note to demo/out-ok.txt.
+It must not touch anything outside demo/, must not spawn a shell, and must
+not open a network connection.
