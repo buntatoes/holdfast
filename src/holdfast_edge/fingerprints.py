@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from typing import Any
+from urllib.parse import unquote
 
 _UUID = re.compile(
     r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
@@ -12,8 +13,6 @@ _UUID = re.compile(
 _EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _LONG_HEX = re.compile(r"[0-9a-fA-F]{16,}")
 _NUM_SEG = re.compile(r"/(\d+)(?=/|$)")
-_QUERY = re.compile(r"\?.*$")
-
 
 def sha16(*parts: str, salt: str = "") -> str:
     h = hashlib.sha256()
@@ -24,9 +23,28 @@ def sha16(*parts: str, salt: str = "") -> str:
     return h.hexdigest()[:32]
 
 
+def _percent_decode(raw: str, *, rounds: int = 3) -> str:
+    """Decode percent-encoding up to *rounds* times (defeats double-encoding)."""
+    out = raw
+    for _ in range(max(1, rounds)):
+        decoded = unquote(out)
+        if decoded == out:
+            break
+        out = decoded
+    return out
+
+
 def normalize_path(path: str) -> str:
-    """Resolve . and .. so allowlists and scores see the real path. Never walk above /."""
+    """Percent-decode, then resolve . and .. so allowlists and scores see the real path.
+
+    Never walk above /. Encoding tricks such as ``%2e%2e``, ``%2e%2e%2f``, and
+    double-encoded forms (``%252e%252e``) are decoded before segment collapse so
+    a ``/health`` allowlist cannot be abused via ``/health/%2e%2e/admin``.
+    """
     raw = (path or "/").split("#", 1)[0].split("?", 1)[0]
+    raw = _percent_decode(raw)
+    # Drop NULs that encoding can introduce; they never belong in a routing path.
+    raw = raw.replace("\x00", "")
     if not raw.startswith("/"):
         raw = "/" + raw
     parts: list[str] = []
@@ -60,10 +78,7 @@ def path_fingerprint(path: str, salt: str = "") -> str:
 
 def redact_path(path: str) -> str:
     """Keep a routing pattern. Drop identifiers that look like people or secrets."""
-    raw = (path or "/").split("#", 1)[0]
-    raw = _QUERY.sub("", raw)
-    if not raw.startswith("/"):
-        raw = "/" + raw
+    raw = normalize_path(path or "/")
     raw = _EMAIL.sub(":email", raw)
     raw = _UUID.sub(":id", raw)
     raw = _LONG_HEX.sub(":id", raw)
@@ -80,9 +95,8 @@ def header_names_of(headers: Any) -> tuple[str, ...]:
 
 
 def extract_ids(path: str) -> tuple[str, ...]:
-    """Numeric and UUID path segments from the raw path (in-memory scoring only)."""
-    raw = (path or "/").split("#", 1)[0]
-    raw = _QUERY.sub("", raw)
+    """Numeric and UUID path segments from the normalized path (in-memory scoring only)."""
+    raw = normalize_path(path or "/")
     found: list[str] = []
     found.extend(m.group(0).lower() for m in _UUID.finditer(raw))
     found.extend(_NUM_SEG.findall(raw))

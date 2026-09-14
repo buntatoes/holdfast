@@ -93,3 +93,52 @@ def test_assets_dotdot_is_not_allowlisted(clock: Clock) -> None:
     d = engine.observe(req("/assets/../secret", headers=BROWSER))
     assert d.allowlisted is False
     assert d.rule_id != "edge.allowlist.path"
+
+
+def test_encoded_dotdot_cannot_use_health_prefix(clock: Clock) -> None:
+    """Percent-encoded .. must not ride a /health prefix allowlist."""
+    engine = make_engine(clock)
+    for path in (
+        "/health/%2e%2e/admin",
+        "/health/%2e%2e%2fadmin",
+        "/health%2f%2e%2e%2fadmin",
+        "/health/%2E%2E/admin",
+        "/%68ealth/%2e%2e/admin",  # still collapses to /admin after decode+normalize
+    ):
+        d = engine.observe(req(path, headers=BROWSER))
+        assert d.allowlisted is False, path
+        assert d.rule_id != "edge.allowlist.path", path
+
+
+def test_double_encoded_dotdot_cannot_use_health_prefix(clock: Clock) -> None:
+    engine = make_engine(clock)
+    for path in (
+        "/health/%252e%252e/admin",
+        "/health/%252e%252e%252fadmin",
+        "/health/%25%32%65%25%32%65/admin",
+    ):
+        d = engine.observe(req(path, headers=BROWSER))
+        assert d.allowlisted is False, path
+        assert d.rule_id != "edge.allowlist.path", path
+
+
+def test_encoded_health_child_still_allowlisted(clock: Clock) -> None:
+    engine = make_engine(clock)
+    d = engine.observe(req("/health/%6cive", headers=BROWSER))  # /health/live
+    assert d.allowlisted is True
+    assert d.rule_id == "edge.allowlist.path"
+
+
+def test_observe_json_encoded_traversal_not_allowlisted(clock: Clock) -> None:
+    """Observe API body path is normalized the same way as middleware paths."""
+    engine = make_engine(clock, mode="shadow")
+    from holdfast_edge.server import build_app
+    from fastapi.testclient import TestClient
+
+    client = TestClient(build_app(engine))
+    body = client.post(
+        "/v1/observe",
+        json=req("/health/%2e%2e/admin", headers=BROWSER),
+    ).json()
+    assert body["decision"]["allowlisted"] is False
+    assert body["decision"]["rule_id"] != "edge.allowlist.path"
