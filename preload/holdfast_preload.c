@@ -522,12 +522,22 @@ static int hf_ask(const char *kind, const char *op, const char *detail_obj) {
     session = getenv("HOLDFAST_SESSION");
     if (!session)
         session = "";
+    const char *swarm = getenv("HOLDFAST_SWARM");
+    const char *agent = getenv("HOLDFAST_AGENT");
 
     hf_buf_init(&b, req, sizeof(req));
     hf_puts(&b, "{\"id\":\"");
     hf_put_esc(&b, id);
     hf_puts(&b, "\",\"session\":\"");
     hf_put_esc(&b, session);
+    if (swarm && swarm[0]) {
+        hf_puts(&b, "\",\"swarm\":\"");
+        hf_put_esc(&b, swarm);
+    }
+    if (agent && agent[0]) {
+        hf_puts(&b, "\",\"agent\":\"");
+        hf_put_esc(&b, agent);
+    }
     hf_puts(&b, "\",\"kind\":\"");
     hf_put_esc(&b, kind);
     hf_puts(&b, "\",\"op\":\"");

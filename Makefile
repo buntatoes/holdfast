@@ -1,11 +1,14 @@
-.PHONY: all preload install test console-install
+.PHONY: all preload jail install test console-install
 
-all: preload
+all: preload jail
 
 preload:
 	$(MAKE) -C preload
 
-install: preload
+jail:
+	$(MAKE) -C jail
+
+install: preload jail
 	python3 -m pip install -e ".[dev]"
 
 test:

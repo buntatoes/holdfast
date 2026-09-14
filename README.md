@@ -48,12 +48,14 @@ gate on the process.
 
 | Piece | Role |
 | --- | --- |
+| `jail/` | Native C Linux jail (`holdfast-jail`). Sandboxes agent processes in kernel namespaces (PID, Mount, User, UTS, IPC, Network) for agent swarms. |
 | `preload/` | C library (`libholdfast.so`). Intercepts libc, talks to the daemon, uses `dlsym(RTLD_NEXT)` and a re-entrancy guard so its own IPC is not intercepted. |
 | `src/holdfast/` | Daemon, policy engine, audit chain, CLI (`holdfastd`, `holdfast`). |
 | `console/` | Operator desk — Next.js UI for the pending queue. |
 | `policies/default.yaml` | Shipped policy. First match wins: `allow`, `deny`, `ask`. |
 | `src/holdfast_edge/` | Optional Edge mode — scores swarm-like web traffic in front of a site. Separate from wrap. |
 | `policies/edge.yaml` | Edge policy. Default shadow. |
+| `JAIL.md` | Jail & Agent Swarm isolation architecture and operator notes. |
 | `EDGE.md` | Edge operator notes. |
 | `demo/` | Naughty agent (blocked path) and well-behaved agent (contrast). |
 | `systemd/holdfast.service` | Linux unit. |
@@ -67,14 +69,14 @@ Linux only. The daemon refuses to start on any other OS.
 
 ## Install (Linux)
 
-Build toolchain, Python 3, and Node.js (for the desk).
+Build toolchain (gcc/make), Python 3, and Node.js (for the desk).
 
 ```bash
-make -C preload          # → preload/libholdfast.so
+make                     # builds preload/libholdfast.so and jail/holdfast-jail
 python3 -m pip install -e .
 ```
 
-That puts `holdfastd` and `holdfast` on your `PATH`.
+That puts `holdfastd`, `holdfast`, and `holdfast-jail` on your `PATH`.
 
 ```bash
 cd console
@@ -93,15 +95,27 @@ holdfastd
 # terminal 2 — operator desk
 cd console && npm run dev
 
-# terminal 3 — wrap whatever you were going to run
+# terminal 3 — run agents under wrap or jail
+# Option A: LD_PRELOAD libc gate
 holdfast wrap -- python3 demo/naughty_agent.py
 holdfast wrap -- python3 demo/well_behaved_agent.py
+
+# Option B: Full Linux namespace jail for agent swarms (PID, MNT, USER, UTS, IPC isolation)
+holdfast jail --swarm alpha --agent worker-1 -- python3 demo/naughty_agent.py
+# with network unshared (hardened):
+holdfast jail --isolate-net -- python3 demo/naughty_agent.py
+
 # or the bundled naughty run:
 holdfast demo
 ```
 
 `holdfast wrap` sets `LD_PRELOAD`, `HOLDFAST_SOCK`, and `HOLDFAST_SESSION`
-and execs the command. Unwrapped processes are not gated.
+and execs the command.
+
+`holdfast jail` creates isolated Linux namespaces (PID=1 in jail, unshared mount
+and `/proc`, private user and UTS hostname) and injects `libholdfast.so` for
+defense-in-depth policy enforcement. Swarm agents are isolated from each other.
+See `JAIL.md` for full details.
 
 ```bash
 holdfast status
@@ -169,30 +183,17 @@ payload.
 `demo/out-ok.txt`. Under the default policy the read is allowed; the write
 still asks.
 
-## Limitations
+## Containment & Limitations
 
-This is a first slice, not a kernel sandbox.
+Holdfast provides two complementary layers of isolation:
 
-- **`LD_PRELOAD` is not a jail.** It wraps libc. It does not wrap the
-  kernel. A process that issues raw syscalls, or that is not dynamically
-  linked against glibc/musl libc in the usual way, is outside this gate.
-- **Static binaries and most Go binaries may bypass libc** and therefore
-  bypass the preload. Do not point Holdfast at `CGO_ENABLED=0` Go agents
-  and assume they are held.
-- Unwrapped children you did not `holdfast wrap` are not held. Policy is
-per wrapped session, not a machine-wide MAC.
+1. **`holdfast jail` (Kernel Sandbox):** Native C container layer using Linux namespaces (User, Mount, PID, UTS, IPC, Network). The agent runs as PID 1 in an unshared namespace, cannot view host processes or other swarm members in `/proc`, and can have raw network access completely unshared (`--isolate-net`).
+2. **`holdfast wrap` (LD_PRELOAD Enforcement):** libc-level syscall interception for file, shell, and network operations gating agent proposals with policy or human verification.
 
-`holdfast wrap` disables Python's posix_spawn/vfork helpers. glibc
-`posix_spawn` uses vfork; the child shares memory with the parent until
-exec and can rewrite the agent's `connect` PLT, which would let later
-network calls skip the gate. Node and other runtimes can still hit that
-if they vfork.
-- The desk and daemon are local operator tools, not a multi-tenant
-  control plane.
-
-If you need ptrace, seccomp, or a user namespace, that is a different
-product. Holdfast is the libc cut you can put under a Python or Node agent
-today.
+### Considerations:
+- **`LD_PRELOAD` alone is not a kernel boundary:** A binary issuing direct `syscall` assembly or statically linked binaries can bypass libc. When running untrusted binaries or Go agents, run under `holdfast jail` for true namespace isolation.
+- **Static Go Binaries:** If compiled with `CGO_ENABLED=0`, libc wrappers are bypassed, but Linux namespaces (`holdfast jail`) will still contain them.
+- **Multi-Tenant Control Plane:** The operator desk and daemon are designed as local operator tools for developers and teams managing agents.
 
 ## Holdfast Edge
 

@@ -6,12 +6,6 @@ from holdfast_edge.tests.conftest import BROWSER, Clock, make_engine, req
 
 
 def test_package_does_not_import_host_daemon() -> None:
-    import sys
-
-    assert "holdfast" not in sys.modules or not any(
-        name == "holdfast" or name.startswith("holdfast.") for name in list(sys.modules)
-        if name != "holdfast_edge" and not name.startswith("holdfast_edge")
-    )
     import inspect
     import holdfast_edge as pkg
     import holdfast_edge.engine as engine

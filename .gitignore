@@ -19,6 +19,7 @@ htmlcov/
 *.so
 *.o
 *.a
+jail/holdfast-jail
 
 # Node / Next
 node_modules/

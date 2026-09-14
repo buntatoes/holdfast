@@ -55,6 +55,8 @@ class SessionInfo:
     command: str | None
     started_at: str
     last_seen: str
+    swarm: str | None = None
+    agent: str | None = None
     stats: dict[str, int] = field(
         default_factory=lambda: {"allow": 0, "deny": 0, "ask": 0}
     )
@@ -89,6 +91,8 @@ class HoldfastState:
                 "pid": sess.pid,
                 "command": sess.command,
                 "started_at": sess.started_at,
+                "swarm": sess.swarm,
+                "agent": sess.agent,
                 "stats": {**sess.stats, "pending": pending_n},
             }
         return {
@@ -113,6 +117,8 @@ class HoldfastState:
         if argv:
             command = " ".join(str(x) for x in argv)
         sess = self.sessions.get(sid)
+        swarm = request.get("swarm")
+        agent = request.get("agent")
         if sess is None:
             sess = SessionInfo(
                 id=sid,
@@ -120,10 +126,16 @@ class HoldfastState:
                 command=command,
                 started_at=now,
                 last_seen=now,
+                swarm=swarm,
+                agent=agent,
             )
             self.sessions[sid] = sess
         else:
             sess.last_seen = now
+            if swarm and not sess.swarm:
+                sess.swarm = swarm
+            if agent and not sess.agent:
+                sess.agent = agent
             if request.get("pid") is not None:
                 sess.pid = request.get("pid")
             if command and (not sess.command or request.get("kind") == "shell"):
@@ -178,6 +190,10 @@ def _audit_from_request(
         "session": request.get("session"),
         "pid": request.get("pid"),
     }
+    if request.get("swarm"):
+        event["swarm"] = request.get("swarm")
+    if request.get("agent"):
+        event["agent"] = request.get("agent")
     if note:
         event["note"] = note
     return state.audit.append(event)

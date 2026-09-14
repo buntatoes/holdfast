@@ -6,6 +6,7 @@ fail-closed. Ethos: agents propose, humans verify.
 
 ## Layout
 
+- `jail/` — C native Linux namespace jail (`holdfast-jail`)
 - `preload/` — C `LD_PRELOAD` library (`libholdfast.so`)
 - `src/holdfast/` — Python package: daemon, policy, audit, CLI
 - `console/` — Next.js operator UI (Tailwind + shadcn/ui)
@@ -98,6 +99,7 @@ Never rewrite. Fields: id, ts, kind, op, detail, decision, actor
 ```
 holdfastd          # start daemon (socket + HTTP)
 holdfast wrap -- <cmd...>   # set LD_PRELOAD + HOLDFAST_SOCK + HOLDFAST_SESSION and exec
+holdfast jail [--swarm id] [--agent id] [--isolate-net] -- <cmd...>  # run in kernel namespace jail
 holdfast status
 holdfast audit [--json]
 holdfast demo      # run demo/naughty_agent.py under wrap

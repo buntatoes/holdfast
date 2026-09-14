@@ -72,3 +72,17 @@ def find_preload_lib() -> Path:
         if path.is_file():
             return path
     return Path("/workspace/preload/libholdfast.so")
+
+
+def find_jail_bin() -> Path:
+    candidates = [
+        Path("/workspace/jail/holdfast-jail"),
+        Path.cwd() / "jail" / "holdfast-jail",
+        Path("/usr/local/bin/holdfast-jail"),
+        Path(__file__).resolve().parents[2] / "jail" / "holdfast-jail",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path
+    return Path("/workspace/jail/holdfast-jail")
+

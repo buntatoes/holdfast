@@ -16,6 +16,7 @@ from holdfast.audit import AuditLog
 from holdfast.util import (
     HTTP_BASE,
     default_audit_path,
+    find_jail_bin,
     find_preload_lib,
     sock_path,
 )
@@ -137,13 +138,114 @@ def wrap_exec(argv: list[str]) -> int:
     return 0
 
 
+def jail_exec(
+    argv: list[str],
+    *,
+    swarm: str | None = None,
+    agent: str | None = None,
+    workspace: str | None = None,
+    isolate_net: bool = False,
+    ro_root: bool = False,
+    wrap: bool = True,
+    verbose: bool = False,
+) -> int:
+    argv = _wrap_argv(argv)
+    if not argv:
+        print("holdfast jail: missing command after --", file=sys.stderr)
+        return 2
+    jail_bin = find_jail_bin()
+    if not jail_bin.is_file():
+        print(
+            f"holdfast jail: jail binary not found at {jail_bin}. "
+            "Build it with `make -C jail` (fail-closed: refusing to run unjailed).",
+            file=sys.stderr,
+        )
+        return 2
+
+    jail_cmd = [str(jail_bin)]
+    if swarm:
+        jail_cmd.extend(["--swarm", swarm])
+    if agent:
+        jail_cmd.extend(["--agent", agent])
+    if workspace:
+        jail_cmd.extend(["--workspace", workspace])
+    if isolate_net:
+        jail_cmd.append("--isolate-net")
+    if ro_root:
+        jail_cmd.append("--ro-root")
+    if verbose:
+        jail_cmd.append("--verbose")
+    jail_cmd.append("--")
+
+    if wrap:
+        # Wrap the target command inside the jail with LD_PRELOAD
+        lib = find_preload_lib()
+        if not lib.is_file():
+            print(
+                f"holdfast jail: preload library not found at {lib}. "
+                "Build it with `make -C preload` (fail-closed: refusing to exec unwrapped).",
+                file=sys.stderr,
+            )
+            return 2
+        env = os.environ.copy()
+        existing = env.get("LD_PRELOAD", "")
+        env["LD_PRELOAD"] = f"{lib}:{existing}" if existing else str(lib)
+        env["HOLDFAST_SOCK"] = env.get("HOLDFAST_SOCK") or sock_path()
+        session_id = f"{swarm}:{agent}" if (swarm and agent) else (agent or swarm or str(uuid.uuid4()))
+        env["HOLDFAST_SESSION"] = env.get("HOLDFAST_SESSION") or session_id
+        env.setdefault("PYTHONDONTWRITEBYTECODE", "1")
+        env.setdefault("PYTHONUNBUFFERED", "1")
+        env.setdefault("LD_BIND_NOW", "1")
+        patch_dir = Path(__file__).resolve().parent / "_pythonpath"
+        if patch_dir.is_dir():
+            existing_pp = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = (
+                str(patch_dir) if not existing_pp else f"{patch_dir}{os.pathsep}{existing_pp}"
+            )
+    else:
+        env = os.environ.copy()
+
+    full_argv = [*jail_cmd, *argv]
+    prog = full_argv[0]
+    try:
+        os.execvpe(prog, full_argv, env)
+    except OSError as exc:
+        print(f"holdfast jail: failed to exec {prog}: {exc}", file=sys.stderr)
+        return 127
+    return 0
+
+
 def cmd_wrap(args: argparse.Namespace) -> int:
     return wrap_exec(list(args.argv))
+
+
+def cmd_jail(args: argparse.Namespace) -> int:
+    return jail_exec(
+        list(args.argv),
+        swarm=args.swarm,
+        agent=args.agent,
+        workspace=args.workspace,
+        isolate_net=args.isolate_net,
+        ro_root=args.ro_root,
+        wrap=not args.no_wrap,
+        verbose=args.verbose,
+    )
 
 
 def cmd_demo(_args: argparse.Namespace) -> int:
     script = find_demo_script()
     return wrap_exec(["python3", str(script)])
+
+
+def cmd_jail_standalone() -> None:
+    jail_bin = find_jail_bin()
+    if not jail_bin.is_file():
+        print(
+            f"holdfast-jail: binary not found at {jail_bin}. Build with `make -C jail`.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    os.execv(str(jail_bin), [str(jail_bin), *sys.argv[1:]])
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -160,6 +262,49 @@ def build_parser() -> argparse.ArgumentParser:
         help="command to exec; use: holdfast wrap -- cmd...",
     )
     wrap_p.set_defaults(func=cmd_wrap)
+
+    jail_p = sub.add_parser("jail", help="run command inside an isolated Linux namespace jail for agent swarms")
+    jail_p.add_argument(
+        "--swarm",
+        default=None,
+        help="swarm identifier for grouping agent instances",
+    )
+    jail_p.add_argument(
+        "--agent",
+        default=None,
+        help="agent identifier within the swarm",
+    )
+    jail_p.add_argument(
+        "--workspace",
+        default=None,
+        help="working directory for the jailed agent",
+    )
+    jail_p.add_argument(
+        "--isolate-net",
+        action="store_true",
+        help="unshare network namespace to block host network access",
+    )
+    jail_p.add_argument(
+        "--ro-root",
+        action="store_true",
+        help="mount root filesystem read-only",
+    )
+    jail_p.add_argument(
+        "--no-wrap",
+        action="store_true",
+        help="do not inject LD_PRELOAD enforcement into the jail",
+    )
+    jail_p.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="print jail setup diagnostics",
+    )
+    jail_p.add_argument(
+        "argv",
+        nargs=argparse.REMAINDER,
+        help="command to exec in jail; use: holdfast jail [options] -- cmd...",
+    )
+    jail_p.set_defaults(func=cmd_jail)
 
     status_p = sub.add_parser("status", help="GET /health on the daemon")
     status_p.set_defaults(func=cmd_status)

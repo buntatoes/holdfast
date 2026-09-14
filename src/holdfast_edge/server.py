@@ -16,7 +16,7 @@ def build_app(engine: EdgeEngine | None = None, config: EdgeConfig | None = None
     from fastapi.responses import JSONResponse
 
     engine = engine or EdgeEngine(config or load_config())
-    app = FastAPI(title="Holdfast Edge", version="0.2.0")
+    app = FastAPI(title="Holdfast Edge", version="0.2.2")
     app.state.engine = engine
 
     @app.get("/health")

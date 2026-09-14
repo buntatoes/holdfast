@@ -34,6 +34,7 @@ class Match(BaseModel):
     under_cwd: bool = False
     family: str | None = None
     session: str | None = None
+    swarm: str | None = None
     exact_path: str | None = None
     argv: list[str] | None = None
 
@@ -193,6 +194,13 @@ def matches(rule: Rule, request: dict[str, Any]) -> bool:
         return False
     if m.session and m.session != session:
         return False
+    if m.swarm:
+        # Match swarm either via explicit swarm field or prefix in session (swarm:agent)
+        req_swarm = request.get("swarm")
+        if not req_swarm and session and ":" in str(session):
+            req_swarm = str(session).split(":", 1)[0]
+        if req_swarm != m.swarm:
+            return False
     if m.kind and m.kind != request.get("kind"):
         return False
     if m.op and m.op != request.get("op"):

@@ -20,7 +20,7 @@ def build_proxy(
 
     engine = engine or EdgeEngine(config)
     origin = origin.rstrip("/")
-    app = FastAPI(title="Holdfast Edge Proxy", version="0.2.0")
+    app = FastAPI(title="Holdfast Edge Proxy", version="0.2.2")
     app.state.engine = engine
     app.state.origin = origin
 

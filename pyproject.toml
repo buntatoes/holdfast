@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "holdfast"
-version = "0.2.0"
+version = "0.2.2"
 description = "Linux daemon that gates agent file, shell, and network operations"
 requires-python = ">=3.11"
 authors = [{ name = "Holdfast" }]
@@ -25,6 +25,7 @@ edge = ["httpx>=0.27"]
 holdfastd = "holdfast.server:main"
 holdfast = "holdfast.cli:main"
 holdfast-edge = "holdfast_edge.cli:main"
+holdfast-jail = "holdfast.cli:cmd_jail_standalone"
 
 [tool.setuptools.packages.find]
 where = ["src"]

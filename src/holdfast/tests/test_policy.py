@@ -196,11 +196,11 @@ def test_glob_and_under_helpers() -> None:
 
 
 def test_quiet_allow_only_policy_file_reads(shipped: PolicyEngine) -> None:
-    read = _req("file", "open", path=f"{CWD}/demo/brief.txt", flags="r"))
+    read = _req("file", "open", path=f"{CWD}/demo/brief.txt", flags="r")
     assert is_quiet_allow(read, shipped.evaluate(read))
-    write = _req("file", "open", path=f"{CWD}/demo/out.txt", flags="w"))
+    write = _req("file", "open", path=f"{CWD}/demo/out.txt", flags="w")
     assert not is_quiet_allow(write, shipped.evaluate(write))
-    shadow = _req("file", "open", path="/etc/shadow", flags="r"))
+    shadow = _req("file", "open", path="/etc/shadow", flags="r")
     assert not is_quiet_allow(shadow, shipped.evaluate(shadow))
     human = Verdict("allow", "session-x", "human:operator")
     assert not is_quiet_allow(read, human)
@@ -228,3 +228,32 @@ def test_argv_contains() -> None:
     v = engine.evaluate(_req("shell", "exec", argv=["curl", "https://x"]))
     assert v.action == "deny"
     assert v.rule_id == "deny-curl"
+
+
+def test_swarm_rule_matching() -> None:
+    engine = PolicyEngine.from_dict(
+        {
+            "rules": [
+                {
+                    "id": "deny-swarm-net",
+                    "match": {"kind": "net", "swarm": "worker-swarm"},
+                    "action": "deny",
+                },
+                {
+                    "id": "allow-other-net",
+                    "match": {"kind": "net"},
+                    "action": "allow",
+                },
+            ]
+        }
+    )
+    # Test via session "swarm:agent"
+    v1 = engine.evaluate(_req("net", "connect", session="worker-swarm:agent-1", host="1.1.1.1"))
+    assert v1.action == "deny"
+    assert v1.rule_id == "deny-swarm-net"
+
+    # Test another swarm
+    v2 = engine.evaluate(_req("net", "connect", session="lead-swarm:agent-0", host="1.1.1.1"))
+    assert v2.action == "allow"
+    assert v2.rule_id == "allow-other-net"
+
