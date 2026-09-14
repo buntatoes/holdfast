@@ -452,6 +452,14 @@ async def session(request: Request) -> dict[str, Any]:
     return _hf(request).session_public()
 
 
+@app.get("/api/sessions")
+async def sessions(request: Request) -> dict[str, Any]:
+    state = _hf(request)
+    items = [state.session_public(sess) for sess in state.sessions.values()]
+    items.sort(key=lambda row: row.get("started_at") or "")
+    return {"items": items, "count": len(items)}
+
+
 @app.get("/api/policy")
 async def policy(request: Request) -> dict[str, Any]:
     return _hf(request).policy.summary()

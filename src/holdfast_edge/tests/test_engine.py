@@ -6,24 +6,29 @@ from holdfast_edge.tests.conftest import BROWSER, Clock, make_engine, req
 
 
 def test_package_does_not_import_host_daemon() -> None:
+    import inspect
+    import subprocess
     import sys
 
-    assert "holdfast" not in sys.modules or not any(
-        name == "holdfast" or name.startswith("holdfast.") for name in list(sys.modules)
-        if name != "holdfast_edge" and not name.startswith("holdfast_edge")
-    )
-    import inspect
     import holdfast_edge as pkg
     import holdfast_edge.engine as engine
-    import holdfast_edge.server as server
     import holdfast_edge.middleware as middleware
+    import holdfast_edge.server as server
 
     for mod in (pkg, engine, server, middleware):
         src = inspect.getsource(mod)
         assert "from holdfast " not in src
         assert "import holdfast\n" not in src
         assert "from holdfast." not in src
-        assert "import holdfast." not in src
+
+    probe = (
+        "import holdfast_edge, sys\n"
+        "bad = [n for n in sys.modules if n == 'holdfast' or "
+        "(n.startswith('holdfast.') and not n.startswith('holdfast_edge'))]\n"
+        "raise SystemExit(1 if bad else 0)\n"
+    )
+    result = subprocess.run([sys.executable, "-c", probe], check=False)
+    assert result.returncode == 0
 
 
 def test_observe_api_roundtrip(clock: Clock) -> None:

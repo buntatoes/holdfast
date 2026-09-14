@@ -6,7 +6,7 @@ Holdfast Edge is a second mode of Holdfast. The host daemon still gates an agent
 
 Agents propose. Humans and policy verify. Edge does not try to guess who wrote the client. It scores what the client *does*.
 
-This package is separate from the host daemon on purpose. A bad edge rule cannot brick `holdfast wrap`.
+This package is separate from the host daemon on purpose. A bad edge rule cannot brick `holdfast wrap`. Edge is Apache-2.0. The host kernel jail (`jail/`) is proprietary; see `JAIL.md`.
 
 ## What it does
 
@@ -28,6 +28,18 @@ Start in **shadow** mode. Edge logs what it would do and lets every request thro
 - It does not read request bodies. It does not keep query values, emails, or raw IPs. Provenance stores hashes and redacted path patterns.
 - It does not share process space or policy files with the host wrap path.
 - It is fail-**open** on internal errors. False-positive denial of service is the number one risk. (The host daemon is still fail-closed. Different job.)
+
+## Privacy (PII)
+
+Edge is built so a provenance dump is not a people database.
+
+| Kept | Dropped |
+| --- | --- |
+| Hashed client fingerprint | Raw IP, User-Agent, caller-supplied ids |
+| Redacted path pattern (`/users/:email`, `/users/:id`) | Emails, UUIDs, long hex, numeric ids in the path |
+| Score, rule, signal names | Request bodies, query values, cookies |
+
+Set `HOLDFAST_EDGE_SALT` in real deploys so fingerprints are not reversible from a rainbow table of IPs. Retention is short (24 hours by default) and pruned on purpose.
 
 ## Signals (v0)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,3 +73,25 @@ def find_preload_lib() -> Path:
         if path.is_file():
             return path
     return Path("/workspace/preload/libholdfast.so")
+
+
+def find_jail_bin() -> Path:
+    env = os.environ.get("HOLDFAST_JAIL_BIN")
+    if env:
+        return Path(env)
+    which = shutil.which("holdfast-jail")
+    candidates: list[Path] = []
+    if which:
+        candidates.append(Path(which))
+    candidates.extend(
+        [
+            Path("/workspace/jail/holdfast-jail"),
+            Path.cwd() / "jail" / "holdfast-jail",
+            Path(__file__).resolve().parents[2] / "jail" / "holdfast-jail",
+            Path("/usr/local/bin/holdfast-jail"),
+        ]
+    )
+    for path in candidates:
+        if path.is_file() and os.access(path, os.X_OK):
+            return path
+    return Path("/workspace/jail/holdfast-jail")

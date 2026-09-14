@@ -1,0 +1,9 @@
+Holdfast Jail
+Copyright 2026 Holdfast
+
+Proprietary. Not licensed under Apache License 2.0.
+See LICENSE in this directory.
+
+The rest of Holdfast remains Apache License 2.0. Official builds include
+this directory. `holdfast jail` and `holdfast swarm` refuse to start if
+the Jail binary is missing.

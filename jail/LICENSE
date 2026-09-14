@@ -1,0 +1,25 @@
+Holdfast Jail License
+Copyright 2026 Holdfast
+
+This directory ("Jail") is proprietary software. It is NOT licensed under
+the Apache License 2.0 that covers the rest of Holdfast.
+
+Permission is granted to use Jail solely as part of an official Holdfast
+distribution, including to run, copy, and install unmodified official builds
+that contain Jail.
+
+You may not:
+
+- modify, replace, disable, bypass, or extract Jail in order to run
+  Holdfast without this kernel isolation;
+- use Jail as a standalone library or in another product;
+- sublicense, relicense, or release Jail under an open-source license;
+- distribute Jail except as part of an official Holdfast release.
+
+Earlier published Holdfast versions remain under Apache License 2.0
+(0.2.1 and earlier were Apache-2.0 throughout; 0.2.0 was MIT).
+This license applies to Jail in Holdfast 0.2.2 and later.
+
+NO WARRANTY. Jail is provided "AS IS", without warranties or conditions
+of any kind. See also the disclaimer in the Apache License 2.0 for the
+rest of the project.

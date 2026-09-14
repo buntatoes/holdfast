@@ -33,7 +33,8 @@ LD_PRELOAD=./libholdfast.so HOLDFAST_SOCK=/tmp/holdfast.sock ls /
 ```
 
 `holdfast wrap -- <cmd...>` sets `LD_PRELOAD`, `HOLDFAST_SOCK`, and
-`HOLDFAST_SESSION` for you.
+`HOLDFAST_SESSION` for you. `holdfast jail` / `holdfast swarm` do the same
+inside proprietary `holdfast-jail` (see `../JAIL.md`).
 
 Environment:
 
@@ -48,6 +49,10 @@ IPC uses `dlsym(RTLD_NEXT)` for `socket` / `connect` / `write` / `read` /
 `close` plus a thread-local re-entrancy guard so the library does not
 intercept its own traffic. Connects and opens of `$HOLDFAST_SOCK` itself
 are skipped so the channel stays up.
+
+Preload records the path, argv, or `host:port` the process proposed. That is
+operator audit data on the local machine, not a network export. Kernel-level
+isolation (no host passwd/home) is proprietary Jail; see `../JAIL.md`.
 
 ## Test fail-closed (no daemon)
 
