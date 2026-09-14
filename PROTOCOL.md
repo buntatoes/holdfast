@@ -66,8 +66,7 @@ Base: `http://127.0.0.1:47821`
 - `GET /api/policy` → current policy summary
 - `WS /api/stream` → JSON events: `pending`, `decided`, `audit`, `session`
 
-CORS: allow the console origin. Bind `0.0.0.0` in this environment so preview
-works; document localhost for production.
+CORS: allow the console origin. Prefer localhost in production.
 
 ## Policy (`policies/default.yaml`)
 

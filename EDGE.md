@@ -50,7 +50,7 @@ Scores combine with a noisy-OR of the behavior signals. Tool-shape may add a lit
 
 Allowlists run first and always allow. Use them for health checks, static assets, office networks, and an operator token.
 
-A prefix matches that path and its children only. `/health` matches `/health` and `/health/live`, not `/healthcare`. Paths are normalized first, so `/health/../admin` is treated as `/admin` and is not allowlisted.
+A prefix matches that path and its children only. `/health` matches `/health` and `/health/live`, not `/healthcare`. Paths are percent-decoded and normalized first, so `/health/../admin` and encoding tricks like `/health/%2e%2e/admin` (including double-encoding) are treated as `/admin` and are not allowlisted.
 
 ```yaml
 allowlist:
