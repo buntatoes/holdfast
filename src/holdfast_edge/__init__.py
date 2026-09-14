@@ -6,7 +6,7 @@ Agents propose. Humans and policy verify.
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from holdfast_edge.decisions import Decision
 from holdfast_edge.engine import EdgeEngine
