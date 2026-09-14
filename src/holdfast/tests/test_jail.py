@@ -75,6 +75,35 @@ def test_kernel_jail_hides_host_secrets() -> None:
     assert facts["passwd_exists"] is True
 
 
+def test_jail_nss_does_not_leak_host_users() -> None:
+    import getpass
+
+    binary = _ensure_jail()
+    host_user = getpass.getuser()
+    script = r"""
+from pathlib import Path
+passwd = Path("/etc/passwd").read_text()
+group = Path("/etc/group").read_text()
+hosts = Path("/etc/hosts").read_text()
+print("PASSWD", passwd.replace("\n", "|"))
+print("GROUP", group.replace("\n", "|"))
+print("HOSTS", hosts.replace("\n", "|"))
+"""
+    result = subprocess.run(
+        [str(binary), "--no-preload", "--", sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(REPO),
+    )
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "jail:/tmp:" in out
+    assert "/home/" not in out
+    if host_user not in {"root", "nobody"}:
+        assert host_user not in out
+
+
 def test_kernel_jail_blocks_unshare_and_mount() -> None:
     binary = _ensure_jail()
     script = r"""

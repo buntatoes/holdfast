@@ -50,6 +50,10 @@ IPC uses `dlsym(RTLD_NEXT)` for `socket` / `connect` / `write` / `read` /
 intercept its own traffic. Connects and opens of `$HOLDFAST_SOCK` itself
 are skipped so the channel stays up.
 
+Preload records the path, argv, or `host:port` the process proposed. That is
+operator audit data on the local machine, not a network export. Kernel-level
+isolation (no host passwd/home) is proprietary Jail; see `../JAIL.md`.
+
 ## Test fail-closed (no daemon)
 
 If nothing is listening, every gated call is denied:

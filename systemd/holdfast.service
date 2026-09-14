@@ -1,6 +1,7 @@
 [Unit]
 Description=Holdfast daemon
-Documentation=file:///workspace/PROTOCOL.md
+Documentation=file:///usr/share/doc/holdfast/PROTOCOL.md
+Documentation=file:///usr/share/doc/holdfast/JAIL.md
 After=network.target
 
 [Service]

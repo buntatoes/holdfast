@@ -9,4 +9,4 @@ npm install
 npm run dev
 ```
 
-Serves on `http://0.0.0.0:43123`. Point it at the daemon with `NEXT_PUBLIC_HOLDFAST_API` (default `http://127.0.0.1:47821`).
+Serves on `http://0.0.0.0:43123`. Point it at the daemon with `NEXT_PUBLIC_HOLDFAST_API` (default `http://127.0.0.1:47821`). Bind localhost in production. The desk shows the path, argv, or host:port the agent proposed; it does not collect operator or end-user PII.

@@ -44,7 +44,9 @@ the world fails; the filesystem Unix socket still works.
 `LD_PRELOAD` wraps libc. Jail wraps the kernel view:
 
 - **Mount + Landlock.** `/etc/shadow`, `/root`, and `$HOME` are not in the
-  tree. Workspace is bind-mounted read-write. `/usr` is read-only.
+  tree. Host `/etc/passwd` is not bind-mounted; the jail writes a synthetic
+  passwd (`root` / `nobody` only). Workspace is bind-mounted read-write.
+  `/usr` is read-only.
 - **PID + UTS.** Each member is pid 1 in its own namespace (`holdfast-N`).
 - **seccomp.** `ptrace`, `bpf`, `mount`, `unshare`, `clone` with new
   namespaces, `io_uring`, and related escape hatches are denied or killed.

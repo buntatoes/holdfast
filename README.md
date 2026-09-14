@@ -136,6 +136,22 @@ The desk is the queue. Each pending card shows the process (`pid`, `exe`,
 If nobody answers within 300 seconds, Holdfast denies. If the Unix socket is
 missing, the preload denies. There is no silent pass.
 
+## Privacy
+
+Holdfast is an operator tool. It does not phone home.
+
+- **Jail** does not bind host `/etc/passwd`, `/etc/group`, `/etc/hosts`,
+  `/etc/hostname`, `/home`, or `/root`. NSS files inside the jail are
+  synthetic (`root` / `nobody` only). Workspace paths you bind with `--root`
+  are still visible to the agent — do not point `--root` at a home directory
+  of secrets.
+- **Edge** hashes client IPs and User-Agents. Provenance stores fingerprints
+  and redacted path patterns (emails become `:email`; UUIDs and long hex
+  become `:id`). No request bodies, query values, or raw IPs.
+- **Audit** is local append-only JSONL on the operator machine. It records
+  the path, argv, or `host:port` the agent proposed. Treat that file as
+  operator data.
+
 ## Audit log
 
 Append-only JSONL at `$HOLDFAST_AUDIT`, or

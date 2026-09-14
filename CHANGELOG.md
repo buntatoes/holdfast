@@ -6,8 +6,11 @@
   Landlock, seccomp-bpf, `no_new_privs`. Not Apache-2.0; see `jail/LICENSE`.
 - CLI: `holdfast jail`, `holdfast swarm --count N`, `holdfast wrap --jail`.
 - `holdfast jail` / `holdfast swarm` refuse to start if `holdfast-jail` is missing.
+- Jail NSS files are synthetic: host usernames, `/home`, and hostname are not
+  copied into the jail.
 - `GET /api/sessions` lists wrap/jail/swarm sessions.
-- Demo: `demo/swarm_probe.py`. Operator notes: `JAIL.md`.
+- Demo: `demo/swarm_probe.py`. Operator notes: `JAIL.md`. Privacy notes in
+  README, `JAIL.md`, and `EDGE.md`.
 
 ## 0.2.1
 

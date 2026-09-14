@@ -59,6 +59,21 @@ Direct (same binary):
 Environment: `HOLDFAST_SOCK`, `HOLDFAST_SESSION`, `HOLDFAST_JAIL_BIN`.
 Inside the jail: `HOLDFAST_JAIL=1`, `HOLDFAST_JAIL_MEMBER` (swarm).
 
+## Privacy
+
+Jail does not import host identity:
+
+- `/etc/passwd` and `/etc/group` inside the jail are synthetic (`root` and
+  `nobody`). Host usernames and `/home/...` paths are not copied in.
+- `/etc/hosts` and `/etc/hostname` are written for the jail hostname
+  (`holdfast` or `holdfast-N`), not the host's name.
+- `/root` and `/home` are not mounted. `/etc/shadow` is not mounted.
+- The operator audit log still records what the agent *proposed* (path,
+  argv, host:port). That log stays on the operator machine.
+
+A `--root` bind of a checkout that contains secrets is still a bind of those
+secrets. Keep the workspace to the repo.
+
 ## License
 
 Copyright 2026 Holdfast. Proprietary. See `jail/LICENSE` and `NOTICE`.

@@ -67,11 +67,7 @@
     (CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWCGROUP)
 
 static const char *hf_ro_etc[] = {
-    "/etc/passwd",
-    "/etc/group",
     "/etc/nsswitch.conf",
-    "/etc/hosts",
-    "/etc/hostname",
     "/etc/resolv.conf",
     "/etc/ld.so.cache",
     "/etc/ld.so.conf",
@@ -147,6 +143,56 @@ static int write_file(const char *path, const char *data) {
     close(fd);
     errno = saved;
     return w == (ssize_t)n ? 0 : -1;
+}
+
+static int join_root(char *out, size_t n, const char *newroot, const char *abs);
+
+static int write_new_file(const char *path, const char *data) {
+    int fd = open(path, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
+    if (fd < 0)
+        return -1;
+    size_t n = strlen(data);
+    ssize_t w = write(fd, data, n);
+    int saved = errno;
+    close(fd);
+    errno = saved;
+    return w == (ssize_t)n ? 0 : -1;
+}
+
+/* Synthetic NSS files so host usernames, home paths, and machine names
+ * never enter the jail. Do not bind-mount host /etc/passwd or /etc/hosts.
+ */
+static int seed_etc(const char *newroot, const char *hostname) {
+    char path[PATH_MAX];
+    char hosts[512];
+    const char *hn = (hostname && hostname[0]) ? hostname : "holdfast";
+
+    if (join_root(path, sizeof(path), newroot, "/etc/passwd") < 0)
+        return -1;
+    if (write_new_file(path, "root:x:0:0:jail:/tmp:/usr/sbin/nologin\n"
+                             "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\n") < 0)
+        return -1;
+    if (join_root(path, sizeof(path), newroot, "/etc/group") < 0)
+        return -1;
+    if (write_new_file(path, "root:x:0:\nnobody:x:65534:\nnogroup:x:65534:\n") < 0)
+        return -1;
+    if (join_root(path, sizeof(path), newroot, "/etc/hostname") < 0)
+        return -1;
+    {
+        char line[300];
+        int n = snprintf(line, sizeof(line), "%s\n", hn);
+        if (n < 0 || (size_t)n >= sizeof(line))
+            return -1;
+        if (write_new_file(path, line) < 0)
+            return -1;
+    }
+    if (join_root(path, sizeof(path), newroot, "/etc/hosts") < 0)
+        return -1;
+    snprintf(hosts, sizeof(hosts),
+             "127.0.0.1\tlocalhost\n127.0.0.1\t%s\n::1\tlocalhost ip6-localhost\n", hn);
+    if (write_new_file(path, hosts) < 0)
+        return -1;
+    return 0;
 }
 
 static int mkdir_p(const char *path, mode_t mode) {
@@ -800,6 +846,8 @@ static int setup_mounts(const hf_cfg *cfg) {
         if (bind_into(newroot, hf_ro_etc[i], 1) < 0)
             return -1;
     }
+    if (seed_etc(newroot, cfg->hostname) < 0)
+        return -1;
 
     if (join_root(dst, sizeof(dst), newroot, "/dev") < 0)
         return -1;

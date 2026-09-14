@@ -43,7 +43,7 @@ not intercepted.
 
 - file: `{"path":"/abs/path","flags":"w","mode":420}` (`flags` is `r`/`w`/`rw`)
 - shell: `{"argv":["curl","https://evil.example"],"resolved":"/usr/bin/curl"}`
-- net: `{"host":"93.184.216.34","port":443,"family":"tcp"}`
+- net: `{"host":"203.0.113.10","port":443,"family":"tcp"}`
 
 ### Response (daemon → preload)
 
@@ -86,6 +86,13 @@ Policy-allowed file reads are enforced but omitted from the default audit stream
 
 `remember_session` on a human allow/deny adds an in-memory session rule
 ahead of the file (same kind+op+normalized target).
+
+## Privacy
+
+Edge provenance never stores raw IPs, User-Agents, emails, or bodies (see
+`EDGE.md`). Jail NSS files are synthetic; host `/etc/passwd` is not mounted
+(see `JAIL.md`). The host audit log is local operator data (paths/argv the
+agent proposed).
 
 ## Audit log
 
