@@ -60,8 +60,7 @@ gate on the process.
 
 The preload and daemon speak newline-delimited JSON on `$HOLDFAST_SOCK`
 (default `/tmp/holdfast.sock`). The console talks to the daemon over HTTP
-on `http://127.0.0.1:47821` (WebSocket at `/api/stream`). Production should
-bind localhost; this environment may bind `0.0.0.0` so a preview works.
+on `http://127.0.0.1:47821` (WebSocket at `/api/stream`). Bind the desk and daemon to localhost in production.
 
 Linux only. The daemon refuses to start on any other OS.
 
@@ -214,4 +213,4 @@ A bad edge rule cannot brick `holdfast wrap`. See `EDGE.md`.
 
 ## License
 
-MIT
+Apache-2.0
