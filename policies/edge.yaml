@@ -1,0 +1,58 @@
+# Holdfast Edge shipped policy.
+# Default is shadow: score and log, never block. Flip mode to enforce
+# only after the provenance log looks right.
+#
+# False-positive DoS is the #1 risk. Allowlists run first. Uncertain
+# traffic is challenged, not blocked. A first hit is never a silent ban.
+#
+# Score behavior (burst, fan-out, retry loops, goal-seeking walks).
+# Do not ban on User-Agent claims.
+version: 1
+mode: shadow
+retention_hours: 24
+listen_host: 127.0.0.1
+listen_port: 47831
+
+thresholds:
+  challenge: 40
+  deny: 80
+  min_observations_before_deny: 3
+  min_window_s_before_deny: 5
+
+windows:
+  burst_s: 10
+  fanout_s: 30
+  retry_s: 20
+  goal_s: 60
+
+signals:
+  burst:
+    requests: 40
+  fanout:
+    distinct_paths: 15
+  retry_loop:
+    repeats: 8
+  goal_loop:
+    sequence_hits: 6
+    sensitive_families: 4
+  tool_client:
+    # Corroboration only. Capped so header shape cannot challenge or deny alone.
+    max_score: 25
+
+weights:
+  burst: 1.0
+  fanout: 1.0
+  retry_loop: 1.0
+  goal_loop: 1.0
+  tool_client: 0.0
+
+allowlist:
+  path_prefixes:
+    - /health
+    - /assets/
+    - /static/
+  hosts: []
+  client_fps: []
+  cidrs: []
+  header_tokens: []
+  header_token_name: x-holdfast-edge-token

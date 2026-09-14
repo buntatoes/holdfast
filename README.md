@@ -52,6 +52,9 @@ gate on the process.
 | `src/holdfast/` | Daemon, policy engine, audit chain, CLI (`holdfastd`, `holdfast`). |
 | `console/` | Operator desk — Next.js UI for the pending queue. |
 | `policies/default.yaml` | Shipped policy. First match wins: `allow`, `deny`, `ask`. |
+| `src/holdfast_edge/` | Optional Edge mode — scores swarm-like web traffic in front of a site. Separate from wrap. |
+| `policies/edge.yaml` | Edge policy. Default shadow. |
+| `EDGE.md` | Edge operator notes. |
 | `demo/` | Naughty agent (blocked path) and well-behaved agent (contrast). |
 | `systemd/holdfast.service` | Linux unit. |
 
@@ -190,6 +193,24 @@ if they vfork.
 If you need ptrace, seccomp, or a user namespace, that is a different
 product. Holdfast is the libc cut you can put under a Python or Node agent
 today.
+
+## Holdfast Edge
+
+A second mode, separate package. Edge sits in front of a website and scores
+swarm behavior — bursts, fan-out, retry loops, goal-seeking walks. It does
+not ban on User-Agent claims.
+
+Decisions are **allow**, **challenge**, or **deny**. Uncertain traffic is
+challenged, not blocked. A first hit is never a silent ban. Default mode is
+**shadow**: log what would happen, let every request through. Flip to
+**enforce** only after the log looks right.
+
+```bash
+holdfast-edge proxy --origin http://127.0.0.1:8080 --mode shadow
+```
+
+Policy: `policies/edge.yaml`. Listen: `127.0.0.1:47831` (not the daemon port).
+A bad edge rule cannot brick `holdfast wrap`. See `EDGE.md`.
 
 ## License
 
