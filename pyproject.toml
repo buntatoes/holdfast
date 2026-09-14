@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "holdfast"
-version = "0.1.0"
+version = "0.2.0"
 description = "Linux daemon that gates agent file, shell, and network operations"
 requires-python = ">=3.11"
 authors = [{ name = "Holdfast" }]
@@ -19,20 +19,22 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+edge = ["httpx>=0.27"]
 
 [project.scripts]
 holdfastd = "holdfast.server:main"
 holdfast = "holdfast.cli:main"
+holdfast-edge = "holdfast_edge.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["holdfast*"]
-exclude = ["holdfast.tests*"]
+include = ["holdfast*", "holdfast_edge*"]
+exclude = ["holdfast.tests*", "holdfast_edge.tests*"]
 
 [tool.setuptools.package-data]
 holdfast = ["_pythonpath/sitecustomize.py"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/holdfast/tests"]
+testpaths = ["src/holdfast/tests", "src/holdfast_edge/tests"]
 pythonpath = ["src"]
 addopts = "-q"
