@@ -1,6 +1,13 @@
 /*
  * holdfast-jail: Native Linux jail for Agent swarms.
  *
+ * Copyright (c) 2026 Holdfast. All Rights Reserved.
+ * PROPRIETARY AND CONFIDENTIAL.
+ *
+ * This software is proprietary and subject to commercial licensing terms.
+ * Unauthorized distribution, duplication, or modification is prohibited.
+ * See jail/LICENSE for licensing terms.
+ *
  * Provides true kernel sandbox isolation using Linux namespaces:
  * - User namespace (unprivileged root mapping)
  * - Mount namespace (private root, fresh /proc, minimal mounts)

@@ -215,4 +215,5 @@ A bad edge rule cannot brick `holdfast wrap`. See `EDGE.md`.
 
 ## License
 
-MIT
+Holdfast core (`src/holdfast`, `preload/`, `console/`, and `src/holdfast_edge/`) is licensed under the MIT License.
+Holdfast Jail (`jail/`, `holdfast-jail`) is proprietary software; see `jail/LICENSE` for commercial terms.

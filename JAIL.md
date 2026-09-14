@@ -108,3 +108,8 @@ rules:
       swarm: lead-swarm
     action: allow
 ```
+
+## License
+
+Holdfast Jail is proprietary software: Copyright (c) 2026 Holdfast. All Rights Reserved.
+Unauthorized redistribution or modification is strictly prohibited. See `jail/LICENSE` for commercial licensing terms.
