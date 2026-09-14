@@ -207,7 +207,7 @@ class EdgeEngine:
             "ok": True,
             "package": "holdfast_edge",
             "mode": self.config.mode,
-            "version": "0.2.0",
+            "version": "0.2.1",
             "listen": f"{self.config.listen_host}:{self.config.listen_port}",
             "thresholds": {
                 "challenge": self.config.thresholds.challenge,

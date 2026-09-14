@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "holdfast"
-version = "0.2.0"
+version = "0.2.1"
 description = "Linux daemon that gates agent file, shell, and network operations"
 requires-python = ">=3.11"
 authors = [{ name = "Holdfast" }]
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
