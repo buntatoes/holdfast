@@ -6,11 +6,12 @@ fail-closed. Ethos: agents propose, humans verify.
 
 ## Layout
 
+- `jail/` — proprietary kernel jail (`holdfast-jail`). Not Apache-2.0. See `jail/LICENSE`.
 - `preload/` — C `LD_PRELOAD` library (`libholdfast.so`)
 - `src/holdfast/` — Python package: daemon, policy, audit, CLI
 - `console/` — Next.js operator UI (Tailwind + shadcn/ui)
 - `policies/default.yaml` — shipped policy
-- `demo/` — a naughty agent that tries file/shell/net
+- `demo/` — naughty agent, well-behaved agent, swarm probe
 - `systemd/holdfast.service` — Linux unit
 
 ## Unix socket (enforcement)
@@ -62,7 +63,8 @@ Base: `http://127.0.0.1:47821`
 - `GET /api/pending` → `{items: Request[]}` (waiting on a human)
 - `POST /api/decide` body `{id, decision: "allow"|"deny", actor, note?, remember_session?: bool}`
 - `GET /api/audit?limit=100` → `{items: AuditEvent[]}`
-- `GET /api/session` → `{id, pid, command, started_at, stats}`
+- `GET /api/session` → `{id, pid, command, started_at, stats}` (most recently seen)
+- `GET /api/sessions` → `{items: Session[], count}` (all wrap/jail/swarm sessions)
 - `GET /api/policy` → current policy summary
 - `WS /api/stream` → JSON events: `pending`, `decided`, `audit`, `session`
 
@@ -97,12 +99,18 @@ Never rewrite. Fields: id, ts, kind, op, detail, decision, actor
 ```
 holdfastd          # start daemon (socket + HTTP)
 holdfast wrap -- <cmd...>   # set LD_PRELOAD + HOLDFAST_SOCK + HOLDFAST_SESSION and exec
+holdfast jail -- <cmd...>   # proprietary kernel jail + wrap env; refuse if jail missing
+holdfast swarm --count N -- <cmd...>
+holdfast wrap --jail -- <cmd...>   # same as jail
 holdfast status
 holdfast audit [--json]
 holdfast demo      # run demo/naughty_agent.py under wrap
 ```
 
 Linux only: refuse to start on non-Linux with a clear error.
+
+Holdfast Jail (`jail/`) is proprietary and is not part of this Apache-2.0
+protocol contract beyond the CLI names above. See `jail/LICENSE` and `JAIL.md`.
 
 ## UI copy
 

@@ -15,10 +15,11 @@ env/
 .coverage
 htmlcov/
 
-# Native / preload
+# Native / preload / jail
 *.so
 *.o
 *.a
+jail/holdfast-jail
 
 # Node / Next
 node_modules/

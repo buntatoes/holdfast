@@ -32,7 +32,10 @@ gate on the process.
 ## Architecture
 
 ```
-  agent (python, node, …)
+  agent swarm (python, node, go, static, …)
+           │
+           ▼
+    holdfast-jail           namespaces + Landlock + seccomp
            │
            │  libc open / exec / connect
            ▼
@@ -46,8 +49,14 @@ gate on the process.
            └── append-only JSONL audit log
 ```
 
+`holdfast wrap` is the libc gate alone. `holdfast jail` / `holdfast swarm` add the
+proprietary kernel jail so raw syscalls and static binaries share the same
+isolation. Official builds include Jail; those commands refuse to start if the
+binary is missing.
+
 | Piece | Role |
 | --- | --- |
+| `jail/` | Proprietary `holdfast-jail`. User/mount/pid/uts/ipc (+optional net) namespaces, Landlock, seccomp, `no_new_privs`. **Not Apache-2.0.** See `jail/LICENSE`. |
 | `preload/` | C library (`libholdfast.so`). Intercepts libc, talks to the daemon, uses `dlsym(RTLD_NEXT)` and a re-entrancy guard so its own IPC is not intercepted. |
 | `src/holdfast/` | Daemon, policy engine, audit chain, CLI (`holdfastd`, `holdfast`). |
 | `console/` | Operator desk — Next.js UI for the pending queue. |
@@ -55,7 +64,8 @@ gate on the process.
 | `src/holdfast_edge/` | Optional Edge mode — scores swarm-like web traffic in front of a site. Separate from wrap. |
 | `policies/edge.yaml` | Edge policy. Default shadow. |
 | `EDGE.md` | Edge operator notes. |
-| `demo/` | Naughty agent (blocked path) and well-behaved agent (contrast). |
+| `JAIL.md` | Jail / swarm operator notes. |
+| `demo/` | Naughty agent (blocked path), well-behaved agent (contrast), swarm probe. |
 | `systemd/holdfast.service` | Linux unit. |
 
 The preload and daemon speak newline-delimited JSON on `$HOLDFAST_SOCK`
@@ -69,7 +79,7 @@ Linux only. The daemon refuses to start on any other OS.
 Build toolchain, Python 3, and Node.js (for the desk).
 
 ```bash
-make -C preload          # → preload/libholdfast.so
+make                     # → preload/libholdfast.so and jail/holdfast-jail
 python3 -m pip install -e .
 ```
 
@@ -92,15 +102,20 @@ holdfastd
 # terminal 2 — operator desk
 cd console && npm run dev
 
-# terminal 3 — wrap whatever you were going to run
+# terminal 3 — wrap (libc gate) or jail (kernel + libc)
 holdfast wrap -- python3 demo/naughty_agent.py
+holdfast jail -- python3 demo/swarm_probe.py
+holdfast swarm --count 3 --net none -- python3 demo/swarm_probe.py
 holdfast wrap -- python3 demo/well_behaved_agent.py
-# or the bundled naughty run:
+# or the bundled naughty run (preload only):
 holdfast demo
 ```
 
 `holdfast wrap` sets `LD_PRELOAD`, `HOLDFAST_SOCK`, and `HOLDFAST_SESSION`
-and execs the command. Unwrapped processes are not gated.
+and execs the command. `holdfast jail` does that inside proprietary
+`holdfast-jail`. `holdfast swarm` starts N members, each with its own pid
+namespace, hostname `holdfast-N`, and session id. Unwrapped processes are
+not gated. `holdfast wrap --jail` is the same as `holdfast jail`.
 
 ```bash
 holdfast status
@@ -170,28 +185,42 @@ still asks.
 
 ## Limitations
 
-This is a first slice, not a kernel sandbox.
+`holdfast wrap` is the libc cut. `holdfast jail` / `holdfast swarm` are the
+kernel cut (proprietary Jail).
 
-- **`LD_PRELOAD` is not a jail.** It wraps libc. It does not wrap the
-  kernel. A process that issues raw syscalls, or that is not dynamically
-  linked against glibc/musl libc in the usual way, is outside this gate.
-- **Static binaries and most Go binaries may bypass libc** and therefore
-  bypass the preload. Do not point Holdfast at `CGO_ENABLED=0` Go agents
-  and assume they are held.
-- Unwrapped children you did not `holdfast wrap` are not held. Policy is
-per wrapped session, not a machine-wide MAC.
+- **`LD_PRELOAD` is not a jail.** It wraps libc. A process that issues raw
+  syscalls, or that is not dynamically linked against glibc/musl libc in the
+  usual way, is outside the wrap gate. Use `holdfast jail` for those agents.
+- **Jail is Linux namespaces + Landlock + seccomp**, not a VM. Kernel bugs
+  and a mis-mounted workspace are still in scope. `--net host` still has
+  host networking; `--net none` isolates IP.
+- Unwrapped / unjailed children you did not start with `holdfast wrap` or
+  `holdfast jail` are not held. Policy is per session, not a machine-wide MAC.
 
 `holdfast wrap` disables Python's posix_spawn/vfork helpers. glibc
 `posix_spawn` uses vfork; the child shares memory with the parent until
 exec and can rewrite the agent's `connect` PLT, which would let later
 network calls skip the gate. Node and other runtimes can still hit that
-if they vfork.
+if they vfork. Jail still contains the child in the namespace.
 - The desk and daemon are local operator tools, not a multi-tenant
   control plane.
 
-If you need ptrace, seccomp, or a user namespace, that is a different
-product. Holdfast is the libc cut you can put under a Python or Node agent
-today.
+See `JAIL.md`.
+
+## Holdfast Jail
+
+Proprietary kernel isolation for agent swarms. Official builds include it.
+`holdfast jail` and `holdfast swarm` refuse to start if `holdfast-jail` is
+missing. The rest of Holdfast stays Apache-2.0; Jail is not. See `jail/LICENSE`.
+
+```bash
+make -C jail
+holdfast jail -- python3 demo/swarm_probe.py
+holdfast swarm --count 3 --net none -- python3 demo/swarm_probe.py
+```
+
+`--net none` gives each member a network namespace (TCP to the world fails).
+The daemon Unix socket still works. Details: `JAIL.md`.
 
 ## Holdfast Edge
 
@@ -213,4 +242,7 @@ A bad edge rule cannot brick `holdfast wrap`. See `EDGE.md`.
 
 ## License
 
-Apache-2.0
+Copyright 2026 Holdfast. Application code is [Apache License 2.0](LICENSE)
+except Holdfast Jail (`jail/`), which is [proprietary](jail/LICENSE).
+Official builds include Jail. `holdfast jail` and `holdfast swarm` refuse to
+run if the binary is missing. See [NOTICE](NOTICE).

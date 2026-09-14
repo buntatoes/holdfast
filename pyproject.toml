@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "holdfast"
-version = "0.2.1"
-description = "Linux daemon that gates agent file, shell, and network operations"
+version = "0.2.2"
+description = "Linux daemon that gates agent file, shell, and network operations; proprietary kernel jail for swarms"
 requires-python = ">=3.11"
 authors = [{ name = "Holdfast" }]
 license = { text = "Apache-2.0" }
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "httpx>=0.27"]
 edge = ["httpx>=0.27"]
 
 [project.scripts]

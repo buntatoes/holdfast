@@ -1,5 +1,9 @@
 Holdfast
 Copyright 2026 Holdfast
 
-This product includes software developed for Holdfast.
-Licensed under the Apache License, Version 2.0.
+The Holdfast application is licensed under the Apache License 2.0,
+except Holdfast Jail (`jail/`), which is proprietary.
+See LICENSE and jail/LICENSE.
+
+Official builds include Jail. `holdfast jail` and `holdfast swarm`
+refuse to run if the Jail binary is missing.

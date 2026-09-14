@@ -196,11 +196,11 @@ def test_glob_and_under_helpers() -> None:
 
 
 def test_quiet_allow_only_policy_file_reads(shipped: PolicyEngine) -> None:
-    read = _req("file", "open", path=f"{CWD}/demo/brief.txt", flags="r"))
+    read = _req("file", "open", path=f"{CWD}/demo/brief.txt", flags="r")
     assert is_quiet_allow(read, shipped.evaluate(read))
-    write = _req("file", "open", path=f"{CWD}/demo/out.txt", flags="w"))
+    write = _req("file", "open", path=f"{CWD}/demo/out.txt", flags="w")
     assert not is_quiet_allow(write, shipped.evaluate(write))
-    shadow = _req("file", "open", path="/etc/shadow", flags="r"))
+    shadow = _req("file", "open", path="/etc/shadow", flags="r")
     assert not is_quiet_allow(shadow, shipped.evaluate(shadow))
     human = Verdict("allow", "session-x", "human:operator")
     assert not is_quiet_allow(read, human)

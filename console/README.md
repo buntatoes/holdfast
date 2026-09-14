@@ -1,6 +1,7 @@
 # Holdfast console
 
-Operator UI for allowing or denying agent tool calls.
+Operator UI for allowing or denying agent tool calls. Works with `holdfast wrap`
+and with proprietary `holdfast jail` / `holdfast swarm` sessions.
 
 ```bash
 cd console

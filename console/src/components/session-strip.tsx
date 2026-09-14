@@ -16,7 +16,7 @@ export function SessionStrip() {
   if (!session) {
     return (
       <div className="border-b border-border/70 bg-zinc-950/40 px-4 py-1.5 text-[12px] text-zinc-500 lg:px-6">
-        No wrap session. Agents outside <span className="font-mono text-zinc-400">holdfast wrap</span> are not gated here.
+        No jail or wrap session. Agents outside <span className="font-mono text-zinc-400">holdfast jail</span> / <span className="font-mono text-zinc-400">holdfast wrap</span> are not gated here.
       </div>
     );
   }

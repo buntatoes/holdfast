@@ -33,7 +33,8 @@ LD_PRELOAD=./libholdfast.so HOLDFAST_SOCK=/tmp/holdfast.sock ls /
 ```
 
 `holdfast wrap -- <cmd...>` sets `LD_PRELOAD`, `HOLDFAST_SOCK`, and
-`HOLDFAST_SESSION` for you.
+`HOLDFAST_SESSION` for you. `holdfast jail` / `holdfast swarm` do the same
+inside proprietary `holdfast-jail` (see `../JAIL.md`).
 
 Environment:
 

@@ -6,7 +6,7 @@ Holdfast Edge is a second mode of Holdfast. The host daemon still gates an agent
 
 Agents propose. Humans and policy verify. Edge does not try to guess who wrote the client. It scores what the client *does*.
 
-This package is separate from the host daemon on purpose. A bad edge rule cannot brick `holdfast wrap`.
+This package is separate from the host daemon on purpose. A bad edge rule cannot brick `holdfast wrap`. Edge is Apache-2.0. The host kernel jail (`jail/`) is proprietary; see `JAIL.md`.
 
 ## What it does
 
